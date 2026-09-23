@@ -37,15 +37,6 @@ GPU: install `onnxruntime-gpu` instead of `onnxruntime` and set `device="cuda"`.
 
 Heel lift = sole pitch in the hold minus sole pitch standing. The ankle bands assume a flat foot, so with heel lift the band is `n/a` and the lift is reported instead.
 
-## Results on Example1.mov
-
-| side | frames | shoulder | hip | knee | ankle | heel lift |
-|---|---|---|---|---|---|---|
-| right | 794–956 | 162.0 Above Avg | 131.9 Above Avg | 146.2 Elite | 18.4 n/a | 23° |
-| left | 1387–1569 | 162.7 Above Avg | 122.2 Above Avg | 145.5 Elite | 10.7 n/a | 32° |
-
-IQR 1–4° on every joint, 100% valid frames. Right hip is sitting right on the 131.9 Elite edge, which is the sort of thing the bands need to handle better.
-
 ## Timing
 
 Full run on `Example1.mov` (1648 frames, 720×1280, 54.9 s), CPU only, RTMW-m lightweight mode:
