@@ -53,7 +53,3 @@ Full run on `Example1.mov` (1648 frames, 720×1280, 54.9 s), CPU only, RTMW-m li
 So ~64 ms per frame for the models, 15.7 fps. The geometry is free, it's all detector and pose. Detector is 45% of the budget and runs every frame; re-detecting every 30 frames and cropping from the last keypoints in between is the obvious next step and should bring it under real time on this CPU.
 
 Model comparison from before settling on RTMW-m (CPU, per frame): RTMPose-s 6.6 ms, RTMPose-m 18 ms, RTMW-m 36 ms, RTMW-l 101 ms, RTMW3D-x 150 ms, BlazePose lite/full/heavy 36/49/151 ms. SAM3D ~45 ms and Sapiens-1B 82 ms on GPU. RTMW-m was the smallest one with feet and hands that kept the knee within a few degrees of SAM3D. See `pose_model_comparison.pdf`.
-
-## Checking it
-
-Open the scored video and look at where the dots are during the holds. `Test keypoints.ipynb` and `Untitled.ipynb` draw single keypoints by index if you need to confirm the map. IQR above ~5° or valid fraction under 0.8 in the JSON means don't trust that hold.
