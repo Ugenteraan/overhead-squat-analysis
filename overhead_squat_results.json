@@ -1,0 +1,91 @@
+{
+  "LEFT": [
+    {
+      "shoulder": {
+        "value": 162.7,
+        "band": "Above Avg",
+        "iqr": 4.0,
+        "valid": 1.0
+      },
+      "hip": {
+        "value": 122.2,
+        "band": "Above Avg",
+        "iqr": 2.0,
+        "valid": 1.0
+      },
+      "knee": {
+        "value": 145.5,
+        "band": "Elite",
+        "iqr": 2.0,
+        "valid": 1.0
+      },
+      "ankle": {
+        "value": 10.8,
+        "band": "n/a (heel lift)",
+        "iqr": 1.6,
+        "valid": 1.0
+      },
+      "heel_lift": 32.2,
+      "frames": [
+        1387,
+        1569
+      ],
+      "duration_s": 6.1
+    }
+  ],
+  "RIGHT": [
+    {
+      "shoulder": {
+        "value": 161.9,
+        "band": "Above Avg",
+        "iqr": 1.8,
+        "valid": 1.0
+      },
+      "hip": {
+        "value": 131.9,
+        "band": "Elite",
+        "iqr": 2.1,
+        "valid": 1.0
+      },
+      "knee": {
+        "value": 146.1,
+        "band": "Elite",
+        "iqr": 3.2,
+        "valid": 1.0
+      },
+      "ankle": {
+        "value": 18.4,
+        "band": "n/a (heel lift)",
+        "iqr": 1.0,
+        "valid": 1.0
+      },
+      "heel_lift": 23.0,
+      "frames": [
+        794,
+        956
+      ],
+      "duration_s": 5.4
+    }
+  ],
+  "timing": {
+    "frames": 1648,
+    "scored_frames": 1648,
+    "video_s": 54.9,
+    "ms_per_frame": {
+      "detect": 5.08,
+      "pose": 3.73,
+      "geometry": 0.05,
+      "draw": 0.0
+    },
+    "realtime_factor": 0.28,
+    "totals_s": {
+      "detect": 8.37,
+      "pose": 6.15,
+      "geometry": 0.08,
+      "draw": 0.0,
+      "pass1_total": 15.44,
+      "scoring": 0.01,
+      "video_out": 13.54
+    }
+  }
+}
