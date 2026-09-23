@@ -1,89 +1,68 @@
-# Overhead Squat Joint-Angle Scoring
+# Overhead squat scoring
 
-`analysis.py` takes a phone video of an overhead squat, measures shoulder, hip, knee and ankle angles on the side facing the camera, finds the held squat positions, and maps the medians to the research score bands.
-
-Pose model: RTMW-m (COCO-WholeBody, 133 keypoints) via [rtmlib](https://github.com/Tau-J/rtmlib), ONNX Runtime, CPU by default.
-
-## Setup
-
-```
-pip install rtmlib onnxruntime opencv-python numpy pandas
-```
-
-For GPU, install `onnxruntime-gpu` instead of `onnxruntime` and set `device="cuda"` in the `Wholebody(...)` line. Check that `onnxruntime.get_available_providers()` lists `CUDAExecutionProvider`, otherwise it silently runs on CPU.
+`analysis.py` runs RTMW-m (rtmlib, ONNX) on a squat video, measures shoulder / hip / knee / ankle angles on the side facing the camera, finds the held squat positions and maps them to the score bands from the brief.
 
 ## Run
 
-1. Set `video_path` at the top of `analysis.py`.
-2. `python analysis.py`
+```
+pip install rtmlib onnxruntime opencv-python numpy pandas
+python analysis.py
+```
 
-Outputs, written next to the script:
+Change `video_path` at the top of the file. Outputs land next to the script:
 
-| file | contents |
-|---|---|
-| `overhead_squat_frames.csv` | one row per frame: view, four angles, foot pitch |
-| `overhead_squat_results.json` | per side, one entry per hold: median, band, IQR, valid fraction per joint, heel lift, frame range, plus timing |
-| `overhead_squat_scored.mp4` | input video with skeleton, angles at each joint, and the band panel during holds |
+- `overhead_squat_frames.csv` – angles per frame
+- `overhead_squat_results.json` – per hold: median, band, IQR, valid fraction, heel lift, timing
+- `overhead_squat_scored.mp4` – video with skeleton, angles and the band panel
 
-Recording guidance: phone on the floor or a low stand, full body in frame, hold the bottom of the squat for at least a second, once facing left and once facing right. Front view is used only for symmetry, not scoring.
+Set `SHOW = True` to watch frames while it runs (slower, `q` quits).
+
+GPU: install `onnxruntime-gpu` instead of `onnxruntime` and set `device="cuda"`. If `onnxruntime.get_available_providers()` doesn't list CUDA it silently runs on CPU, timing won't change.
 
 ## Parameters
 
-All at the top of the file or in the scoring section.
-
-| name | default | what it does |
+| | default | |
 |---|---|---|
-| `video_path` | `Example1.mov` | input video |
-| `SHOW` | `False` | show each frame in a window during the first pass. Slower. `q` quits. |
-| `PROGRESS_EVERY` | `100` | print a progress line every N frames |
-| `mode` in `Wholebody(...)` | `lightweight` | RTMW-m. `balanced` / `performance` are larger and slower. |
-| `thr` in `score_overhead_squat` | `0.3` | keypoint confidence gate. Any angle using a keypoint below this is NaN for that frame. |
-| `ratio > 0.45` in `detect_facing_position` | `0.45` | shoulder-width / torso-length above this is FRONT or BACK, below is a side view. Tested: frontal 0.69, oblique 0.44, profile 0.07. |
-| `POSE.knee_min` | `90` | minimum knee flexion for a frame to count as a squat |
-| `POSE.hip_min` | `70` | minimum hip flexion |
-| `POSE.shoulder_min` | `120` | minimum shoulder flexion, i.e. arms actually overhead. Rules out kneeling and sitting. |
-| `POSE.max_speed` | `3.0` | max knee change in deg/frame. Separates a hold from the descent and rise. |
-| `MIN_HOLD_S` | `1.0` | shortest run of squat frames that counts as a hold |
-| `MERGE_GAP_S` | `0.5` | holds closer than this are joined, so one dropped frame does not split a rep |
-| `HEEL_LIFT_DEG` | `12.0` | heel lift above this withholds the ankle band |
-| `0.85 * quantile(0.98)` in the hold loop | | trims each hold to frames near its own knee peak, dropping settle-in and rise-out |
-| `knee < 20` in `score_hold` | `20` | frames in the 5 s before a hold with knee under this are the standing reference for heel lift |
+| `thr` | 0.3 | keypoint confidence. Angles using anything below this are NaN. |
+| view ratio | 0.45 | shoulder width / torso length. Above = front/back, below = side. Measured 0.69 frontal, 0.44 oblique, 0.07 profile. |
+| `POSE` | knee ≥ 90, hip ≥ 70, shoulder ≥ 120, knee speed < 3°/frame | what counts as a held overhead squat frame. Absolute, so it doesn't matter how much of the video is something else. |
+| `MIN_HOLD_S` | 1.0 | shortest hold |
+| `MERGE_GAP_S` | 0.5 | joins holds split by a dropped frame |
+| `HEEL_LIFT_DEG` | 12 | above this the ankle band is withheld |
+| standing ref | knee < 20 in the 5 s before a hold | baseline for heel lift |
 
-## Angle definitions
+## Angles
 
-All 2D, image plane, camera-facing side only. Raw angle between two segments, then converted by the `OVERHEAD_SQUAT` table.
+2D, camera-facing side only. Shoulder: angle between shoulder→hip and shoulder→elbow. Hip and knee: 180 minus the angle between the two segments. Ankle: 90 minus the angle between shin and sole (heel→toe midpoint). Conversions live in the `OVERHEAD_SQUAT` table so another exercise is just another table.
 
-| joint | vectors from the vertex | conversion |
-|---|---|---|
-| shoulder | shoulder→hip, shoulder→elbow | raw |
-| hip | hip→shoulder, hip→knee | 180 − raw |
-| knee | knee→hip, knee→ankle | 180 − raw |
-| ankle | ankle→knee, heel→toe-midpoint | 90 − raw |
+Heel lift = sole pitch in the hold minus sole pitch standing. The ankle bands assume a flat foot, so with heel lift the band is `n/a` and the lift is reported instead.
 
-Foot pitch is the heel→toe line against the image horizontal. Heel lift is the hold's pitch minus the standing pitch in the same view.
+## Results on Example1.mov
 
-Other exercises: add a new conversion table and pass it as `conv` to `score_overhead_squat`; the angle functions stay unchanged.
+| side | frames | shoulder | hip | knee | ankle | heel lift |
+|---|---|---|---|---|---|---|
+| right | 794–956 | 162.0 Above Avg | 131.9 Above Avg | 146.2 Elite | 18.4 n/a | 23° |
+| left | 1387–1569 | 162.7 Above Avg | 122.2 Above Avg | 145.5 Elite | 10.7 n/a | 32° |
 
-## Bands
-
-From the brief, applied to the hold median only, never to a single frame.
-
-| joint | High Risk | Below Avg | Average | Above Avg | Elite |
-|---|---|---|---|---|---|
-| shoulder | <145 | 145–150 | 150–161.5 | 161.5–170 | ≥170 |
-| hip | <102.2 | 102.2–112.1 | 112.1–122.0 | 122.0–131.9 | ≥131.9 |
-| knee | <106.7 | 106.7–114.4 | 114.4–123.1 | 123.1–134.3 | ≥134.3 |
-| ankle | <30.1 | 30.1–33.3 | 33.3–36.0 | 36.0–39.1 | ≥39.1 |
-
-The ankle bands assume a flat foot. If the heel lifts, the band is reported as `n/a (heel lift)` and the lift angle is given instead.
-
-## Verifying accuracy
-
-- Open `overhead_squat_scored.mp4` and check the dots sit on the joints during the holds. A misplaced heel or toe shows up directly in the ankle number.
-- `Test keypoints.ipynb` and `Untitled.ipynb` draw individual keypoints by index on still frames to confirm the index map.
-- IQR and valid fraction in the JSON say how stable each hold was. IQR above about 5 degrees or valid fraction below 0.8 means the hold is not trustworthy.
-- For a reference measurement, run a 3D model such as SAM3D on the same frames and compare the hold medians. On `Example1.mov` the RTMW-m knee and hip medians were within 2–10 degrees of SAM3D's 2D projection.
+IQR 1–4° on every joint, 100% valid frames. Right hip is sitting right on the 131.9 Elite edge, which is the sort of thing the bands need to handle better.
 
 ## Timing
 
-Printed at the end of the run and stored under `timing` in the JSON. On a desktop CPU with RTMW-m: detector about 29 ms per frame, pose about 35 ms, geometry under 0.1 ms. The detector runs every frame; re-detecting every 30 frames and cropping from the previous keypoints in between is the first optimisation to make.
+Full run on `Example1.mov` (1648 frames, 720×1280, 54.9 s), CPU only, RTMW-m lightweight mode:
+
+| stage | total | per frame |
+|---|---|---|
+| detector (YOLOX-tiny) | 47.4 s | 28.7 ms |
+| pose (RTMW-m) | 57.6 s | 34.9 ms |
+| view + angles | 0.09 s | 0.06 ms |
+| first pass total | 107 s | 1.95× video length |
+| hold detection + bands | 8 ms | |
+| output video | 8.4 s | |
+
+So ~64 ms per frame for the models, 15.7 fps. The geometry is free, it's all detector and pose. Detector is 45% of the budget and runs every frame; re-detecting every 30 frames and cropping from the last keypoints in between is the obvious next step and should bring it under real time on this CPU.
+
+Model comparison from before settling on RTMW-m (CPU, per frame): RTMPose-s 6.6 ms, RTMPose-m 18 ms, RTMW-m 36 ms, RTMW-l 101 ms, RTMW3D-x 150 ms, BlazePose lite/full/heavy 36/49/151 ms. SAM3D ~45 ms and Sapiens-1B 82 ms on GPU. RTMW-m was the smallest one with feet and hands that kept the knee within a few degrees of SAM3D. See `pose_model_comparison.pdf`.
+
+## Checking it
+
+Open the scored video and look at where the dots are during the holds. `Test keypoints.ipynb` and `Untitled.ipynb` draw single keypoints by index if you need to confirm the map. IQR above ~5° or valid fraction under 0.8 in the JSON means don't trust that hold.
