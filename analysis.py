@@ -15,6 +15,7 @@ n_frame = 0
 def detect_facing_position(k):
     '''
     We'll use the ratio between the torso's length (mid shoulder point to mid hip point) and the shoulder's width to identify whether the person is facing front or not. 
+    And we're using the toe's direction in relative to the heels for left vs right.
     '''
 
     shoulder_midpoint = (k[6] + k[5])/2 
